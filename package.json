@@ -1,0 +1,25 @@
+{
+  "name": "movegres",
+  "version": "0.0.1",
+  "description": "",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.26.0",
+    "dotenv": "^16.0.0",
+    "execa": "^6.1.0",
+    "exit-hook": "^3.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.9.0",
+    "eslint-config-prettier": "^8.4.0",
+    "eslint-config-xo": "^0.40.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "^2.5.1"
+  }
+}
