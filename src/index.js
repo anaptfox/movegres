@@ -1,89 +1,84 @@
-import 'dotenv/config';
-import { start, stop } from './startConduit.js';
-import { getPipelines, createConnector, createPipeline, startPipeline } from './conduit.js';
-import { getFileSize, makeDataDirectory, deleteDataDirectory } from './utils.js';
+import { start } from './exec.js';
+import Conduit from './conduit.js';
+import { getFileSize, makeDataDirectory, deleteDataDirectory, verifyPGConnection } from './utils.js';
 import fs from 'fs';
+import path from 'path';
 
-const main = async () => {
+export default async (dataPath, fileName, { pgTable, pgUrl }, pkgPath) => {
+  const api = new Conduit();
   console.log('Starting...');
-  console.log('Resetting the world.');
+  console.log('House cleaning.. 🧽');
 
-  await deleteDataDirectory();
-  await makeDataDirectory();
+  await deleteDataDirectory(dataPath);
+  await makeDataDirectory(dataPath);
 
   console.log('Starting Conduit');
-  await start();
+  await start(dataPath);
 
-  console.log('Getting Pipelines');
-  const pipelines = await getPipelines();
-
-  console.log('Pipelines:', pipelines);
+  console.log('Checking to see if Conduit is running...');
+  await api.getPipelines();
+  console.log('It is running!');
 
   console.log('Creating Pipeline');
   const datetime = new Date().toISOString();
-  const pipeline = await createPipeline(
+  const pipeline = await api.createPipeline(
     `movegres-${datetime}`,
     `A pipeline to move data from Postgres to a file. Created by movegres on ${datetime}`
   );
 
   const fileConfig = {
     type: 'TYPE_DESTINATION',
-    plugin: `${process.env.CONDUIT_PKG_PATH}/pkg/plugins/file/file`,
+    plugin: `${pkgPath}/pkg/plugins/file/file`,
     pipelineId: pipeline.id,
     config: {
       name: 'file',
       settings: {
-        path: process.env.FILE,
+        path: path.resolve(dataPath, fileName),
       },
     },
   };
 
   const postgresConfig = {
     type: 'TYPE_SOURCE',
-    plugin: `${process.env.CONDUIT_PKG_PATH}/pkg/plugins/pg/pg`,
+    plugin: `${pkgPath}/pkg/plugins/pg/pg`,
     pipelineId: pipeline.id,
     config: {
       name: 'pg',
       settings: {
-        table: process.env.POSTGRES_TABLE,
-        url: process.env.POSTGRES_URL,
+        table: pgTable,
+        url: pgUrl,
         cdc: 'false',
       },
     },
   };
 
+  console.log('Checking your PG URL');
+  await verifyPGConnection(pgUrl);
+  console.log('Looks like we can connect to it.');
+
   console.log('Creating PG Connector');
-  await createConnector(postgresConfig);
+  await api.createConnector(postgresConfig);
 
   console.log('Creating File Connector');
-  await createConnector(fileConfig);
+  await api.createConnector(fileConfig);
 
   console.log('Starting Pipeline');
-  await startPipeline(pipeline.id);
+  await api.startPipeline(pipeline.id);
 
   let lastChange = new Date();
 
-  fs.watchFile(process.env.FILE, (curr) => {
+  fs.watchFile(path.resolve(dataPath, fileName), (curr) => {
     lastChange = new Date();
     console.log(`Downloading ... ${curr.size} bytes`);
   });
 
   setInterval(async () => {
     if (lastChange < new Date() - 5000) {
-      const fileSize = await getFileSize();
+      const fileSize = await getFileSize(dataPath, fileName);
+      console.log(`Downloading ... ${fileSize} bytes`);
       console.log('Looks like we are done. Stopping Conduit');
-      console.log(`Current file size: ${fileSize} bytes`);
+      console.log(`Total File Size: ${fileSize} bytes`);
       process.exit(0);
     }
   }, 5000);
 };
-
-main();
-
-process.on('SIGINT', async () => {
-  console.log('Stopping Conduit');
-  await deleteDataDirectory();
-  stop();
-  console.log('Stopped Conduit');
-  process.exit();
-});

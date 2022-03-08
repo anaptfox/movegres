@@ -7,13 +7,18 @@
   "scripts": {
     "start": "node src/index.js"
   },
+  "bin": {
+    "movegres": "./bin/movegres.js"
+},
   "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^0.26.0",
-    "dotenv": "^16.0.0",
     "execa": "^6.1.0",
-    "exit-hook": "^3.0.0"
+    "exit-hook": "^3.0.0",
+    "make-dir": "^3.1.0",
+    "pg": "^8.7.3",
+    "yargs": "^17.3.1"
   },
   "devDependencies": {
     "eslint": "^8.9.0",

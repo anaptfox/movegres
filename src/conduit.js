@@ -1,52 +1,67 @@
 import axios from 'axios';
 
-const CONDUIT_HOST = 'http://localhost:8080';
+function printError(error) {
+  const { message } = error.toJSON();
 
-export async function getPipelines() {
-  try {
-    const pipelines = await axios.get(`${CONDUIT_HOST}/v1/pipelines`, {
-      headers: {
-        accept: 'application/json',
-      },
-    });
-    return pipelines.data;
-  } catch (error) {
-    console.log(error.data.message);
-  }
+  console.log(`Error: ${message}`);
 }
 
-export async function createPipeline(name, description) {
-  try {
-    const pipeline = await axios.post(`${CONDUIT_HOST}/v1/pipelines`, { config: { name, description } });
-    return pipeline.data;
-  } catch (error) {
-    console.log(error);
-    return null;
+class ConduitAPI {
+  constructor(host) {
+    this.host = host || 'http://localhost:8080';
   }
-}
 
-export async function startPipeline(pipelineId) {
-  try {
-    const pipeline = await axios.post(
-      `${CONDUIT_HOST}/v1/pipelines/${pipelineId}/start`,
-      {},
-      {
+  async getPipelines() {
+    try {
+      const pipelines = await axios.get(`${this.host}/v1/pipelines`, {
         headers: {
           accept: 'application/json',
         },
-      }
-    );
-    return pipeline.data;
-  } catch (error) {
-    console.log(error.data);
+      });
+      return pipelines.data;
+    } catch (error) {
+      printError(error);
+      throw Error('Could not get pipelines');
+    }
+  }
+
+  async createPipeline(name, description) {
+    try {
+      const pipeline = await axios.post(`${this.host}/v1/pipelines`, { config: { name, description } });
+      return pipeline.data;
+    } catch (error) {
+      printError(error);
+      throw Error('Could not create pipeline');
+    }
+  }
+
+  async startPipeline(pipelineId) {
+    try {
+      const pipeline = await axios.post(
+        `${this.host}/v1/pipelines/${pipelineId}/start`,
+        {},
+        {
+          headers: {
+            accept: 'application/json',
+          },
+        }
+      );
+      return pipeline.data;
+    } catch (error) {
+      printError(error);
+      throw Error('Could not start pipeline');
+    }
+  }
+
+  async createConnector(config) {
+    try {
+      const pipeline = await axios.post(`${this.host}/v1/connectors`, config);
+      return pipeline.data;
+    } catch (error) {
+      printError(error);
+      throw Error('Could not create connector');
+    }
   }
 }
 
-export async function createConnector(config) {
-  try {
-    const pipeline = await axios.post(`${CONDUIT_HOST}/v1/connectors`, config);
-    return pipeline.data;
-  } catch (error) {
-    console.log(error);
-  }
-}
+export default ConduitAPI;

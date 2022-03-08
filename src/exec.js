@@ -1,14 +1,17 @@
 import { execa } from 'execa';
+import path from 'path';
 
 let _localProcess;
 
-export function start() {
+export function start(dataPath) {
   return new Promise((resolve, reject) => {
     try {
-      const subprocess = execa('conduit', ['--db.badger.path', './data/conduit.db']);
+      const subprocess = execa('conduit', ['--db.badger.path', path.resolve(dataPath, 'conduit.db')]);
+
+      //   Subprocess.stdout.pipe(process.stdout);
+      subprocess.stderr.pipe(process.stderr);
 
       _localProcess = subprocess;
-      // Subprocess.stdout.pipe(process.stdout);
       setTimeout(() => {
         resolve();
       }, 2000);
