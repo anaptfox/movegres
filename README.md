@@ -1,5 +1,7 @@
 # Movegres
 
+⚠️ EXPERIMENTAL ⚠️
+
 A CLI tool that moves data from PostgreSQL to a file built on top of [Conduit](https://github.com/ConduitIO/conduit). 
 
 This could be used for:
